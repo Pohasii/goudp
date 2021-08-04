@@ -34,8 +34,6 @@ func main() {
 		60,
 	}
 
-	fmt.Println(settings, "here")
-
 	Connections.GC(&settings)
 	go Sender(Listener, &Connections, requests)
 
@@ -80,9 +78,9 @@ type sms struct {
 }
 
 type serverSetting struct {
-	checkTime int64
+	checkTime   int64
 	offlineTime int64
-	removeTime int64
+	removeTime  int64
 }
 
 func (s *serverSetting) getCheckTimeDuration() time.Duration {
@@ -124,9 +122,7 @@ func (m *SafeConnections) CheckAndAdd(uAddr *net.UDPAddr) {
 func (m *SafeConnections) GC(s *serverSetting) {
 	go func() {
 		ticker := time.NewTicker(s.getCheckTimeDuration())
-		fmt.Println(s, "here2")
 		for range ticker.C {
-			fmt.Println(s, "here2")
 			m.Lock()
 			for k, _ := range m.c {
 				if time.Now().Unix()-m.c[k].lastMessagesTime.Unix() > s.offlineTime {
