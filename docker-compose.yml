@@ -1,0 +1,17 @@
+version: "3"
+services:
+  go_udp_server:
+    image: pogasiid/go_udp_server:latest
+    container_name: udpServer
+    restart: always
+    ports:
+      - 55441:55441/udp
+
+#version: "3"
+#services:
+#  go_udp_server:
+#    build: ./
+#    container_name: udpServer
+#    restart: always
+#    ports:
+#      - 55441:55441/udp

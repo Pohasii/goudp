@@ -10,7 +10,7 @@ import (
 
 func main() {
 
-	sAddr := "0.0.0.0:55442" // "0.0.0.0:55442"
+	sAddr := "0.0.0.0:55441"
 	adr, err := net.ResolveUDPAddr("udp", sAddr)
 
 	if err != nil {
@@ -29,11 +29,14 @@ func main() {
 	fmt.Println("Server started with :", sAddr, " Address")
 
 	settings := serverSetting{
-		30 * time.Second,
-		30 * time.Second,
-		60 * time.Second,
+		30,
+		30,
+		60,
 	}
-	Connections.GC(settings)
+
+	fmt.Println(settings, "here")
+
+	Connections.GC(&settings)
 	go Sender(Listener, &Connections, requests)
 
 	buff := make([]byte, 1400)
@@ -77,17 +80,13 @@ type sms struct {
 }
 
 type serverSetting struct {
-	checkTime time.Duration
-	offlineTime time.Duration
-	removeTime time.Duration
+	checkTime int64
+	offlineTime int64
+	removeTime int64
 }
 
-func (s *serverSetting) getOfflineTime() int64 {
-	return int64(s.offlineTime)
-}
-
-func (s *serverSetting) getRemoveTime() int64 {
-	return int64(s.removeTime)
+func (s *serverSetting) getCheckTimeDuration() time.Duration {
+	return time.Duration(s.checkTime) * time.Second
 }
 
 type connMap struct {
@@ -122,17 +121,19 @@ func (m *SafeConnections) CheckAndAdd(uAddr *net.UDPAddr) {
 	m.Unlock()
 }
 
-func (m *SafeConnections) GC(s serverSetting) {
+func (m *SafeConnections) GC(s *serverSetting) {
 	go func() {
-		ticker := time.NewTicker(s.checkTime)
+		ticker := time.NewTicker(s.getCheckTimeDuration())
+		fmt.Println(s, "here2")
 		for range ticker.C {
+			fmt.Println(s, "here2")
 			m.Lock()
 			for k, _ := range m.c {
-				if time.Now().Unix()-m.c[k].lastMessagesTime.Unix() > s.getOfflineTime() {
+				if time.Now().Unix()-m.c[k].lastMessagesTime.Unix() > s.offlineTime {
 					m.c[k].status = false
 				}
 
-				if time.Now().Unix()-m.c[k].lastMessagesTime.Unix() > s.getRemoveTime() && m.c[k].status == false {
+				if time.Now().Unix()-m.c[k].lastMessagesTime.Unix() > s.removeTime && m.c[k].status == false {
 					fmt.Println("Remove users: ", k)
 					delete(m.c, k)
 				}
